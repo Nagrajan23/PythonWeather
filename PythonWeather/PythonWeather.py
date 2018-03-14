@@ -8,6 +8,9 @@ import time
 import os
 from datetime import datetime
 
+#GLOBALS
+thread_3hr_running = False
+
 #Database Connection
 client = pymongo.MongoClient()
 db = client.weather_data #Database in MongoDB
@@ -72,24 +75,20 @@ def get_forecast_3hr():
                     alert_dict['Temperature_F'] = temp_F
                     db_result = db.weather_alerts_3hr.insert_one(alert_dict)
 
-            time.sleep(refresh_rate)
+            if(thread_3hr_running):
+                time.sleep(refresh_rate)
+            else:
+                return
 
 def display_alerts():
     #get_alerts = db.weather_alerts_3hr.find({ }).sort( { Forecast_Timestamp: -1 } ).limit(50)
     #db.weather_alerts_3hr.createIndex( { id: -1 } )
-    #get_alerts = db.weather_data.weather_alerts_3hr.find().sort({ _id:-1 }).limit(50)
-    get_alerts = db.weather_data.weather_alerts_3hr
-    {
- sort: {
-  Forecast_Timestamp: -1
- },
- limit: 50
-}
+    get_alerts = db.weather_alerts_3hr.find().limit(50)
+
     print('Forecast Time \t\tCity \tAlert Status \tBelow 2F? \tTemperature')
     for alert in get_alerts:
         print(alert['Forecast_Timestamp'],'\t',alert['City'],'\t',alert['Alert_Status'],
               '\t',alert['Temperature Status'],'\t',alert['Temperature_F'])
-        #db.weather_alerts_3hr.
     input('Press Enter to Continue...')
 
 #Define Threads
@@ -97,7 +96,6 @@ five_day_forecast_thread = threading.Thread(target = get_forecast_3hr)
 #sixteen_days_forecast_thread = threading.Thread(target = sixteen_days_forecast)
 #weather_maps_thread = threading.Thread(target = weather_maps)
 #open_and_display_maps_thread = threading.Thread(target = open_and_display_maps)
-#weather_alert_thread = threading.Thread(target = weather_alert)
 
 while(True):
     clear()
@@ -116,29 +114,16 @@ while(True):
     menu_option = input("\n\nEnter your option: ")
     if(menu_option == "1"):
         five_day_forecast_thread = threading.Thread(target = get_forecast_3hr)
+        thread_3hr_running = True
         five_day_forecast_thread.start()
     elif(menu_option == "2"):
+        thread_3hr_running = False
         five_day_forecast_thread._delete()
+        print('Stopping Thread. Please wait...')
+        time.sleep(refresh_rate)
     elif(menu_option == "3"):
         display_alerts()
     elif(menu_option == "5"):
         exit();
 
-five_day_forecast_thread.start()
-#sixteen_days_forecast_thread.start()
-#weather_maps_thread.start()
-#open_and_display_maps_thread.start()
-
-#print("Test Hello")
-owm = pyowm.OWM('114c1288a926175bc3b7b768387bc625')
-#observation = owm.weather_at_place('Colombo,LK')
-#w = observation.get_weather()
-fc = owm.three_hours_forecast('Colombo,LK')
-#fc = owm.daily_forecast('Colombo,LK')
-f = fc.get_forecast()
-lst = f.get_weathers()
-print(lst[1])
-print('--------------')
-print(lst[2])
-print(f.get_location())
-
+#END OF PROGRAM
